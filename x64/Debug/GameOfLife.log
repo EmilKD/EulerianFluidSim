@@ -1,0 +1,6 @@
+﻿  Main.cpp
+D:\GameOfLife\Main.cpp(45,11): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\GameOfLife\Main.cpp(46,11): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\GameOfLife\Main.cpp(47,42): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\GameOfLife\Main.cpp(48,43): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+  GameOfLife.vcxproj -> D:\GameOfLife\x64\Debug\GameOfLife.exe
