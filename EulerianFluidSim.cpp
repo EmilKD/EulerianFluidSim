@@ -24,8 +24,8 @@ int rows = 56;
 float worldSize_x = 0.4; //m
 float worldSize_y = 0.3;
 
-float windowScale = 1920 / worldSize_x;
-int windowSize[2]{ 1920, worldSize_y * windowScale };
+float windowScale = 800 / worldSize_x;
+int windowSize[2]{ 800, worldSize_y * windowScale };
 
 Grid grid(windowSize[0], windowSize[1]);
 
@@ -155,7 +155,7 @@ int main()
 
 	int fpsLimit{ 20000 };
 	int timer{ 0 };
-
+	double dt{ 0 };
 	auto lastTime = high_resolution_clock::now();
 
 	while (!glfwWindowShouldClose(window))
@@ -174,8 +174,12 @@ int main()
 			glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
 		
-			// Game of Life
-			grid.simulate(&rectangle, scale_x, scale_y, elapsedTime.count()/1000000);
+			dt = elapsedTime.count() / 1000000;
+			// Fluid Sim
+			grid.simulate(1.0f/60.f);
+			
+			// Rendering
+			grid.render(&rectangle, scale_x, scale_y);
 		}
 		lastTime = currentTime;
 			

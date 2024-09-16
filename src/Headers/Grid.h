@@ -13,8 +13,12 @@ struct cell
 {
 	glm::vec3 pos{0.0f, 0.0f, 0.0f};
 	int id;
-	glm::vec2 vel{ glm::vec2(0.0f, 0.0f) };
-	float density{1.0f};
+	float u{ 0.0f };
+	float v{ 0.0f};
+	float newU{ 0.0f };
+	float newV{ 0.0f };
+	float m{ 0.0f };
+	float newM{ 0.0f };
 	int s{ 1 };
 	double p{ 0.0f };
 };
@@ -26,10 +30,16 @@ public:
 	Grid(int window_res_x, int window_res_y);
 	array<int, 2> getSize();
 	vector<vector<cell>> getCells();
-	void simulate(GraphicalObj* gobj, float &scale_x, float &scale_y, double dt);
+	void render(GraphicalObj* gobj, float &scale_x, float &scale_y);
 	cell* getCellByID(int id);
-	void Project(int &cellx, int &celly, double &dt);
-	float sampleGrid(float x, float y);
+	void project(double dt);
+	void advectVelocity(double dt);
+	void advectSmoke(double dt);
+	void simulate(double dt);
+	void extrapolate();
+
+	glm::vec2 sampleVelocity(glm::vec2 &samplePos);
+	float sampleDensity(glm::vec2& samplePos);
 
 	float xC(float worldx) {
 		return 2 * (worldx / worldSize_x - 0.5);
@@ -47,9 +57,14 @@ private:
 	float worldSize_y = 0.3;
 	const float gridSize = 0.004;
 	vector<vector<cell>> cells;
-	vector<vector<float>> u, v;
 	vector<cell*> cellPtrs;
 	float simgridCount_x, simgridCount_y;
 	Colors color;
+	int substeps{ 40 };
+	double ndt{ 0 };
+	float de{1.0};
+	float density{ 1000.0f };
+	float overRelaxation{ 1.9f };
+	float simulationTime{ 0.0f };
 };
 
