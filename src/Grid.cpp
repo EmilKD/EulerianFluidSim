@@ -48,10 +48,16 @@ Grid::Grid(int window_res_x, int window_res_y)
 			{
 				thisCell->s = 0;
 			}
+			else {
+				thisCell->right = &cells[i + 1][j];
+				thisCell->left = &cells[i - 1][j];
+				thisCell->up = &cells[i][j + 1];
+				thisCell->down = &cells[i][j - 1];
+			}
 
 			/*if (i == 1)
 			{
-				cells[i][j].u = 2.0f;
+				thisCell->u = 2.0f;
 			}*/
 
 			if (i == 0 && (j > std::ceil(2 * gridCount_y / 5.0f) && j <= std::ceil(3 * gridCount_y / 5.0f)))
@@ -86,8 +92,8 @@ void Grid::project(double dt) {
 				if (thisCell->s == 0)
 					continue;
 
-				d = cells[i + 1][j].u - thisCell->u + cells[i][j + 1].v - thisCell->v;
-				s = cells[i][j - 1].s + cells[i][j + 1].s + cells[i - 1][j].s + cells[i + 1][j].s;
+				d = thisCell->right->u - thisCell->u + thisCell->up->v - thisCell->v;
+				s = thisCell->down->s + thisCell->up->s + thisCell->left->s + thisCell->right->s;
 
 				if (s == 0)
 					continue;
@@ -97,48 +103,48 @@ void Grid::project(double dt) {
 
 				thisCell->p += p * cp;
 
-				thisCell->u -= p * cells[i - 1][j].s;
-				cells[i + 1][j].u += p * cells[i + 1][j].s;
-				thisCell->v -= p * cells[i][j - 1].s;
-				cells[i][j + 1].v += p * cells[i][j + 1].s;
+				thisCell->u -= p * thisCell->left->s;
+				thisCell->right->u += p * thisCell->right->s;
+				thisCell->v -= p * thisCell->down->s;
+				thisCell->up->v += p * thisCell->up->s;
 			}
 		}
 	}
 }
 
-void Grid::advectVelocity(double dt) {
-	float avg_v{ 0.0f }, avg_u{ 0.0f };
+void Grid::advectVelocity(double dt) 
+{
 	glm::vec2 samplePos{ glm::vec2(0.0f, 0.0f) }, sampleVels{ glm::vec2(0.0f, 0.0f) };
 
 	for (int i = 1; i < gridCount_x - 1; i++)
 	{
 		for (int j = 1; j < gridCount_y - 1; j++)
 		{
-			cell* thisCell = &cells[i][j];
-			if (thisCell->s == 1 && cells[i-1][j].s == 1 && i < gridCount_x - 2)
+			thisCell = &cells[i][j];
+			if (thisCell->s == 1 && thisCell->left->s == 1 && i < gridCount_x - 2)
 			{
-				avg_v = (thisCell->v + cells[i - 1][j].v + cells[i][j + 1].v + cells[i - 1][j + 1].v) / 4.0f;
+				avgV = (thisCell->v + thisCell->left->v + thisCell->up->v + cells[i - 1][j + 1].v) / 4.0f;
 
-				samplePos.x = cells[i][j].pos.x - gridSize / 2.0f - dt * cells[i][j].u;
-				samplePos.y = cells[i][j].pos.y - dt * avg_v;
+				samplePos.x = thisCell->pos.x - gridSize / 2.0f - dt * thisCell->u;
+				samplePos.y = thisCell->pos.y - dt * avgV;
 
 				thisCell->newU = sampleVelocity(samplePos).x;
 			}
-			if (thisCell->s == 1 && cells[i][j-1].s == 1 && j < gridCount_y - 2)
+			if (thisCell->s == 1 && thisCell->down->s == 1 && j < gridCount_y - 2)
 			{
-				avg_u = (thisCell->u + cells[i + 1][j].u + cells[i][j - 1].u + cells[i + 1][j - 1].u) / 4.0f;
+				avgU = (thisCell->u + thisCell->right->u + thisCell->down->u + cells[i + 1][j - 1].u) / 4.0f;
 
-				samplePos.x = thisCell->pos.x - dt * avg_u;
+				samplePos.x = thisCell->pos.x - dt * avgU;
 				samplePos.y = thisCell->pos.y - gridSize / 2.0f - dt * thisCell->v;
 
 				thisCell->newV = sampleVelocity(samplePos).y;
 			}
 			if (thisCell->s == 1) {
-				avg_u = (thisCell->u + cells[i + 1][j].u) / 2.0f;
-				avg_v = (thisCell->v + cells[i][j + 1].v) / 2.0f;
+				avgU = (thisCell->u + thisCell->right->u) / 2.0f;
+				avgV = (thisCell->v + thisCell->up->v) / 2.0f;
 
-				samplePos.x = thisCell->pos.x - avg_u * dt;
-				samplePos.y = thisCell->pos.y - avg_v * dt;
+				samplePos.x = thisCell->pos.x - avgU * dt;
+				samplePos.y = thisCell->pos.y - avgV * dt;
 
 				thisCell->newM = sampleDensity(samplePos);
 			}
@@ -148,7 +154,7 @@ void Grid::advectVelocity(double dt) {
 	{
 		for (int j = 1; j < gridCount_y - 1; j++)
 		{
-			cell* thisCell = &cells[i][j];
+			thisCell = &cells[i][j];
 			thisCell->u = thisCell->newU;
 			thisCell->v = thisCell->newV;
 			thisCell->m = thisCell->newM;
@@ -168,82 +174,73 @@ void Grid::advectVelocity(double dt) {
 
 glm::vec2 Grid::sampleVelocity(glm::vec2 &samplePos) 
 {
+	sampleCelli = std::min(std::max(int(samplePos.x / worldSize_x * gridCount_x), 1), gridCount_x - 1);
+	sampleCellj = std::min(std::max(int(samplePos.y / worldSize_y * gridCount_y), 1), gridCount_y - 1);
 
-	float sample_u{ 0.0f }, sample_v{ 0.0f };
-	float w00, w10, w01, w11;
-
-	int sampleCelli = std::min(std::max(int(samplePos.x / worldSize_x * gridCount_x), 1), gridCount_x - 1);
-	int sampleCellj = std::min(std::max(int(samplePos.y / worldSize_y * gridCount_y), 1), gridCount_y - 1);
-
-	cell* c00 = nullptr, *c10 = nullptr, *c01 = nullptr, * c11 = nullptr;
-
+	cell* localThisCell = &cells[sampleCelli][sampleCellj];
 	// sampling v
-	if (samplePos.x < cells[sampleCelli][sampleCellj].pos.x)
+	if (samplePos.x < localThisCell->pos.x)
 	{
-		c00 = &cells[sampleCelli - 1][sampleCellj];
-		c10 = &cells[sampleCelli][sampleCellj];
-		c01 = &cells[sampleCelli - 1][sampleCellj + 1];
-		c11 = &cells[sampleCelli][sampleCellj + 1];
+		c0 = &cells[sampleCelli - 1][sampleCellj];
+		c1 = localThisCell;
+		c2 = &cells[sampleCelli - 1][sampleCellj + 1];
+		c3 = &cells[sampleCelli][sampleCellj + 1];
 	}
 	else
 	{
-		c00 = &cells[sampleCelli][sampleCellj];
-		c10 = &cells[sampleCelli + 1][sampleCellj];
-		c01 = &cells[sampleCelli][sampleCellj + 1];
-		c11 = &cells[sampleCelli + 1][sampleCellj + 1];
+		c0 = localThisCell;
+		c1 = &cells[sampleCelli + 1][sampleCellj];
+		c2 = &cells[sampleCelli][sampleCellj + 1];
+		c3 = &cells[sampleCelli + 1][sampleCellj + 1];
 	}
 
-	float x = samplePos.x - c00->pos.x;
-	float y = samplePos.y - (c00->pos.y - gridSize / 2.0f);
+	x = samplePos.x - c0->pos.x;
+	y = samplePos.y - (c0->pos.y - gridSize / 2.0f);
 
 	w00 = 1 - x / gridSize;
 	w01 = x / gridSize;
 	w10 = 1 - y / gridSize;
 	w11 = y / gridSize;
 
-	sample_v = w00 * w10 * c00->v + w01 * w10 * c10->v + w00 * w11 * c01->v + w01 * w11 * c11->v;
+	sample_v = w00 * w10 * c0->v + w01 * w10 * c1->v + w00 * w11 * c2->v + w01 * w11 * c3->v;
 
 	// sampling u
 	if (samplePos.y > cells[sampleCelli][sampleCellj].pos.y)
 	{
-		c00 = &cells[sampleCelli][sampleCellj];
-		c10 = &cells[sampleCelli+1][sampleCellj];
-		c01 = &cells[sampleCelli][sampleCellj + 1];
-		c11 = &cells[sampleCelli + 1][sampleCellj + 1];
+		c0 = localThisCell;
+		c1 = &cells[sampleCelli+1][sampleCellj];
+		c2 = &cells[sampleCelli][sampleCellj + 1];
+		c3 = &cells[sampleCelli + 1][sampleCellj + 1];
 	}
 	else
 	{
-		c00 = &cells[sampleCelli][sampleCellj - 1];
-		c10 = &cells[sampleCelli + 1][sampleCellj - 1];
-		c01 = &cells[sampleCelli][sampleCellj];
-		c11 = &cells[sampleCelli + 1][sampleCellj];
+		c0 = &cells[sampleCelli][sampleCellj - 1];
+		c1 = &cells[sampleCelli + 1][sampleCellj - 1];
+		c2 = localThisCell;
+		c3 = &cells[sampleCelli + 1][sampleCellj];
 	}
 
-	x = samplePos.x - (c00->pos.x - gridSize / 2.0f);
-	y = samplePos.y - c00->pos.y;
+	x = samplePos.x - (c0->pos.x - gridSize / 2.0f);
+	y = samplePos.y - c0->pos.y;
 
 	w00 = 1 - x / gridSize;
 	w01 = x / gridSize;
 	w10 = 1 - y / gridSize;
 	w11 = y / gridSize;
 
-	sample_u = w00 * w10 * c00->u + w01 * w10 * c10->u + w00 * w11 * c01->u + w01 * w11 * c11->u;
+	sample_u = w00 * w10 * c0->u + w01 * w10 * c1->u + w00 * w11 * c2->u + w01 * w11 * c3->u;
 
 	return glm::vec2(sample_u, sample_v);
 }
 
 float Grid::sampleDensity(glm::vec2& samplePos)
 {
-
 	float samplede{ 0.0f };
-	float w00, w10, w01, w11;
 
-	int sampleCelli = std::min(std::max(int(samplePos.x / worldSize_x * gridCount_x), 1), gridCount_x - 1);
-	int sampleCellj = std::min(std::max(int(samplePos.y / worldSize_y * gridCount_y), 1), gridCount_y - 1);
-
-	cell* c0 = nullptr, * c1 = nullptr, * c2 = nullptr, * c3 = nullptr, * c4 = nullptr, * c5 = nullptr, * c6 = nullptr, * c7 = nullptr;
-	cell* thisCell = &cells[sampleCelli][sampleCellj];
-
+	sampleCelli = std::min(std::max(int(samplePos.x / worldSize_x * gridCount_x), 1), gridCount_x - 1);
+	sampleCellj = std::min(std::max(int(samplePos.y / worldSize_y * gridCount_y), 1), gridCount_y - 1);
+	
+	cell* localThisCell = &cells[sampleCelli][sampleCellj];
 
 	c0 = &cells[sampleCelli - 1][sampleCellj - 1];
 	c1 = &cells[sampleCelli - 1][sampleCellj];
@@ -254,37 +251,37 @@ float Grid::sampleDensity(glm::vec2& samplePos)
 	c6 = &cells[sampleCelli + 1][sampleCellj - 1];
 	c7 = &cells[sampleCelli][sampleCellj - 1];
 	
-	if (samplePos.x <= thisCell->pos.x && samplePos.y >= thisCell->pos.y)
+	if (samplePos.x <= localThisCell->pos.x && samplePos.y >= localThisCell->pos.y)
 	{
 		c0 = &cells[sampleCelli - 1][sampleCellj];
-		c1 = thisCell;
+		c1 = localThisCell;
 		c2 = &cells[sampleCelli - 1][sampleCellj + 1];
 		c3 = &cells[sampleCelli][sampleCellj + 1];
 	}
-	else if (samplePos.x <= thisCell->pos.x && samplePos.y < thisCell->pos.y)
+	else if (samplePos.x <= localThisCell->pos.x && samplePos.y < localThisCell->pos.y)
 	{
 		c0 = &cells[sampleCelli - 1][sampleCellj - 1];
 		c1 = &cells[sampleCelli][sampleCellj - 1];
 		c2 = &cells[sampleCelli - 1][sampleCellj];
-		c3 = thisCell;	
+		c3 = localThisCell;	
 	}
-	else if (samplePos.x > thisCell->pos.x && samplePos.y >= thisCell->pos.y)
+	else if (samplePos.x > localThisCell->pos.x && samplePos.y >= localThisCell->pos.y)
 	{
-		c0 = thisCell;
+		c0 = localThisCell;
 		c1 = &cells[sampleCelli + 1][sampleCellj];
 		c2 = &cells[sampleCelli][sampleCellj + 1];
 		c3 = &cells[sampleCelli + 1][sampleCellj + 1];
 	}
-	else if (samplePos.x > thisCell->pos.x && samplePos.y < thisCell->pos.y)
+	else if (samplePos.x > localThisCell->pos.x && samplePos.y < localThisCell->pos.y)
 	{
 		c0 = &cells[sampleCelli][sampleCellj - 1];
 		c1 = &cells[sampleCelli + 1][sampleCellj - 1];
-		c2 = thisCell;
+		c2 = localThisCell;
 		c3 = &cells[sampleCelli + 1][sampleCellj];
 	}
-	else if (samplePos.x == thisCell->pos.x && samplePos.y == thisCell->pos.y)
+	else if (samplePos.x == localThisCell->pos.x && samplePos.y == localThisCell->pos.y)
 	{
-		return thisCell->m;
+		return localThisCell->m;
 	}
 
 	float x = samplePos.x - c0->pos.x;
@@ -299,7 +296,6 @@ float Grid::sampleDensity(glm::vec2& samplePos)
 }
 
 void Grid::advectSmoke(double dt) {
-	cell* thisCell = nullptr;
 	float avgU{ 0.0f }, avgV{ 0.0f };
 	glm::vec2 samplePos{ glm::vec2(0.0f, 0.0f) };
 
@@ -309,8 +305,8 @@ void Grid::advectSmoke(double dt) {
 		{
 			thisCell = &cells[i][j];
 			if (thisCell->s != 0) {
-				avgU = (thisCell->u + cells[i + 1][j].u) / 2.0f;
-				avgV = (thisCell->v + cells[i + 1][j].v) / 2.0f;
+				avgU = (thisCell->u + thisCell->right->u) / 2.0f;
+				avgV = (thisCell->v + thisCell->right->v) / 2.0f;
 
 				samplePos.x = thisCell->pos.x - avgU * dt;
 				samplePos.y = thisCell->pos.y - avgV * dt;
@@ -344,11 +340,11 @@ void Grid::extrapolate()
 	{
 		for (int j = 1; j < gridCount_y - 1; j++)
 		{
-			cell* thisCell = &cells[i][j];
+			thisCell = &cells[i][j];
 
 			if (i==0)
 			{
-				thisCell->u = cells[i][j + 1].u;
+				thisCell->u = thisCell->up->u;
 			}
 			
 		}
@@ -363,9 +359,10 @@ void Grid::simulate(double dt) {
 	{
 		for (int j = 1; j < gridCount_y - 1; j++) 
 		{
-			if (cells[i][j].s == 1 && cells[i][j-1].s == 1)
+			thisCell = &cells[i][j];
+			if (thisCell->s == 1 && thisCell->down->s == 1)
 			{
-				cells[i][j].v += -9.81 * dt;
+				thisCell->v += -9.81 * dt;
 			}
 			
 		}

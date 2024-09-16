@@ -21,6 +21,7 @@ struct cell
 	float newM{ 0.0f };
 	int s{ 1 };
 	double p{ 0.0f };
+	cell* right{ nullptr }, * left{ nullptr }, * up{ nullptr }, * down{ nullptr };
 };
 
 class Grid
@@ -61,10 +62,17 @@ private:
 	float simgridCount_x, simgridCount_y;
 	Colors color;
 	int substeps{ 40 };
-	double ndt{ 0 };
-	float de{1.0};
+	int sampleCelli, sampleCellj;
+	double ndt{ 0 }, d;
+	float de{1.0}, cp;
 	float density{ 1000.0f };
 	float overRelaxation{ 1.9f };
 	float simulationTime{ 0.0f };
+	float w00, w10, w01, w11, x, y;
+	float sample_u{ 0.0f }, sample_v{ 0.0f };
+	float avgV{ 0.0f }, avgU{ 0.0f };
+	cell* thisCell{ nullptr };
+	cell* c0 = nullptr, * c1 = nullptr, * c2 = nullptr, * c3 = nullptr, * c4 = nullptr, * c5 = nullptr, * c6 = nullptr, * c7 = nullptr;
+	glm::vec2 samplePos{ glm::vec2(0.0f, 0.0f) }, sampleVels{ glm::vec2(0.0f, 0.0f) };
 };
 
