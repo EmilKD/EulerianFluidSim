@@ -1,4 +1,0 @@
-﻿  Grid.cpp
-D:\Projects\EulerianFluidSim\src\Grid.cpp(82,37): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-D:\Projects\EulerianFluidSim\src\Grid.cpp(74,12): warning C4101: 'vel': unreferenced local variable
-  GameOfLife.vcxproj -> D:\Projects\EulerianFluidSim\x64\Debug\GameOfLife.exe

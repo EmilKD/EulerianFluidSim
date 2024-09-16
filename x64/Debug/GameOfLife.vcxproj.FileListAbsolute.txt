@@ -1,1 +1,0 @@
-D:\GameOfLife\x64\Debug\GameOfLife.exe
