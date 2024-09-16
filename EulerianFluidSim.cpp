@@ -176,7 +176,7 @@ int main()
 		
 			dt = elapsedTime.count() / 1000000;
 			// Fluid Sim
-			grid.simulate(1.0f/60.f);
+			grid.simulate(1.0f/512.f);
 			
 			// Rendering
 			grid.render(&rectangle, scale_x, scale_y);

@@ -25,6 +25,8 @@ Grid::Grid(int window_res_x, int window_res_y)
 
 	cell initialCell;
 	initialCell.m = 0.001f;
+	initialCell.u = 6.0f;
+	initialCell.v = 0;
 
 	for (int i{ 0 }; i < gridCount_x; ++i)
 	{
@@ -42,36 +44,36 @@ Grid::Grid(int window_res_x, int window_res_y)
 				0.0f
 			);
 
-			thisCell->s = 1;
-			// Boundary conditions
-			if (i == 0 || j == 0 || i==gridCount_x-1 || j==gridCount_y-1)
+			if (i != 0 && i != gridCount_x - 1 && j != 0 && j != gridCount_y - 1)
 			{
-				thisCell->s = 0;
-			}
-			else {
 				thisCell->right = &cells[i + 1][j];
 				thisCell->left = &cells[i - 1][j];
 				thisCell->up = &cells[i][j + 1];
 				thisCell->down = &cells[i][j - 1];
 			}
 
-			/*if (i == 1)
+			thisCell->s = 1;
+			// Boundary conditions
+			if (i == 0 || j == 0 || j == gridCount_y - 1)
 			{
-				thisCell->u = 2.0f;
-			}*/
-
-			if (i == 0 && (j > std::ceil(2 * gridCount_y / 5.0f) && j <= std::ceil(3 * gridCount_y / 5.0f)))
-			{
-				thisCell->m = 0.0f;
+				thisCell->s = 0;
+				thisCell->u = 0;
+				thisCell->v = 0;
 			}
-
-			if ((i < std::ceil(gridCount_x/2.0f) + 5 && i > std::floor(gridCount_x/2.0f) - 5) && (j < std::ceil(gridCount_y / 2.0f) + 5 && j > std::floor(gridCount_y / 2.0f) - 5))
+			if (i==0)
 			{
-				thisCell->v = 2.0f;
-				thisCell->m = 1.0;
+				thisCell->u = 6.0f;
 			}
 			cellPtrs.push_back(thisCell);
 		}
+	}
+
+	circularObj circle(0.03f, worldSize_x / 2.0f - 0.05, worldSize_y / 2.0f, this);
+	for (cell* c : circle.cells)
+	{
+		c->s = 0;
+		c->u = 0;
+		c->v = 0;
 	}
 }
 
@@ -80,7 +82,7 @@ void Grid::project(double dt) {
 	int s{ 0 };
 	cell* thisCell{ nullptr };
 
-	float cp = this->density * gridSize / dt;
+	cp = this->density * gridSize / dt;
 
 	for (int n = 0; n < substeps; n++)
 	{
@@ -159,13 +161,14 @@ void Grid::advectVelocity(double dt)
 			thisCell->v = thisCell->newV;
 			thisCell->m = thisCell->newM;
 
-			if ((i < std::ceil(gridCount_x / 2.0f) + 5 && i > std::floor(gridCount_x / 2.0f) - 5) && (j < std::ceil(gridCount_y / 2.0f) + 5 && j > std::floor(gridCount_y / 2.0f) - 5))
+			if (i == 1)
 			{
-				thisCell->v = 2.0f;
-				if (simulationTime < 0.5f)
-				{
-					thisCell->m = 1;
-				}
+				thisCell->u = 2;
+			}
+			if (i==2 && j>2*gridCount_y/5.0f && j<3*gridCount_y/5.0f)
+			{
+				//thisCell->u = 6.0f;
+				thisCell->m = 1;
 			}
 		}
 	}
@@ -174,21 +177,22 @@ void Grid::advectVelocity(double dt)
 
 glm::vec2 Grid::sampleVelocity(glm::vec2 &samplePos) 
 {
-	sampleCelli = std::min(std::max(int(samplePos.x / worldSize_x * gridCount_x), 1), gridCount_x - 1);
-	sampleCellj = std::min(std::max(int(samplePos.y / worldSize_y * gridCount_y), 1), gridCount_y - 1);
+	sampleCelli = std::min(std::max(int(samplePos.x / worldSize_x * gridCount_x), 1), gridCount_x - 2);
+	sampleCellj = std::min(std::max(int(samplePos.y / worldSize_y * gridCount_y), 1), gridCount_y - 2);
 
-	cell* localThisCell = &cells[sampleCelli][sampleCellj];
+	cell* sampleCell = &cells[sampleCelli][sampleCellj];
+	
 	// sampling v
-	if (samplePos.x < localThisCell->pos.x)
+	if (samplePos.x < sampleCell->pos.x)
 	{
 		c0 = &cells[sampleCelli - 1][sampleCellj];
-		c1 = localThisCell;
+		c1 = sampleCell;
 		c2 = &cells[sampleCelli - 1][sampleCellj + 1];
 		c3 = &cells[sampleCelli][sampleCellj + 1];
 	}
 	else
 	{
-		c0 = localThisCell;
+		c0 = sampleCell;
 		c1 = &cells[sampleCelli + 1][sampleCellj];
 		c2 = &cells[sampleCelli][sampleCellj + 1];
 		c3 = &cells[sampleCelli + 1][sampleCellj + 1];
@@ -207,7 +211,7 @@ glm::vec2 Grid::sampleVelocity(glm::vec2 &samplePos)
 	// sampling u
 	if (samplePos.y > cells[sampleCelli][sampleCellj].pos.y)
 	{
-		c0 = localThisCell;
+		c0 = sampleCell;
 		c1 = &cells[sampleCelli+1][sampleCellj];
 		c2 = &cells[sampleCelli][sampleCellj + 1];
 		c3 = &cells[sampleCelli + 1][sampleCellj + 1];
@@ -216,7 +220,7 @@ glm::vec2 Grid::sampleVelocity(glm::vec2 &samplePos)
 	{
 		c0 = &cells[sampleCelli][sampleCellj - 1];
 		c1 = &cells[sampleCelli + 1][sampleCellj - 1];
-		c2 = localThisCell;
+		c2 = sampleCell;
 		c3 = &cells[sampleCelli + 1][sampleCellj];
 	}
 
@@ -237,10 +241,10 @@ float Grid::sampleDensity(glm::vec2& samplePos)
 {
 	float samplede{ 0.0f };
 
-	sampleCelli = std::min(std::max(int(samplePos.x / worldSize_x * gridCount_x), 1), gridCount_x - 1);
-	sampleCellj = std::min(std::max(int(samplePos.y / worldSize_y * gridCount_y), 1), gridCount_y - 1);
+	sampleCelli = std::min(std::max(int(samplePos.x / worldSize_x * gridCount_x), 1), gridCount_x - 2);
+	sampleCellj = std::min(std::max(int(samplePos.y / worldSize_y * gridCount_y), 1), gridCount_y - 2);
 	
-	cell* localThisCell = &cells[sampleCelli][sampleCellj];
+	cell* sampleCell = &cells[sampleCelli][sampleCellj];
 
 	c0 = &cells[sampleCelli - 1][sampleCellj - 1];
 	c1 = &cells[sampleCelli - 1][sampleCellj];
@@ -251,37 +255,37 @@ float Grid::sampleDensity(glm::vec2& samplePos)
 	c6 = &cells[sampleCelli + 1][sampleCellj - 1];
 	c7 = &cells[sampleCelli][sampleCellj - 1];
 	
-	if (samplePos.x <= localThisCell->pos.x && samplePos.y >= localThisCell->pos.y)
+	if (samplePos.x <= sampleCell->pos.x && samplePos.y >= sampleCell->pos.y)
 	{
 		c0 = &cells[sampleCelli - 1][sampleCellj];
-		c1 = localThisCell;
+		c1 = sampleCell;
 		c2 = &cells[sampleCelli - 1][sampleCellj + 1];
 		c3 = &cells[sampleCelli][sampleCellj + 1];
 	}
-	else if (samplePos.x <= localThisCell->pos.x && samplePos.y < localThisCell->pos.y)
+	else if (samplePos.x <= sampleCell->pos.x && samplePos.y < sampleCell->pos.y)
 	{
 		c0 = &cells[sampleCelli - 1][sampleCellj - 1];
 		c1 = &cells[sampleCelli][sampleCellj - 1];
 		c2 = &cells[sampleCelli - 1][sampleCellj];
-		c3 = localThisCell;	
+		c3 = sampleCell;	
 	}
-	else if (samplePos.x > localThisCell->pos.x && samplePos.y >= localThisCell->pos.y)
+	else if (samplePos.x > sampleCell->pos.x && samplePos.y >= sampleCell->pos.y)
 	{
-		c0 = localThisCell;
+		c0 = sampleCell;
 		c1 = &cells[sampleCelli + 1][sampleCellj];
 		c2 = &cells[sampleCelli][sampleCellj + 1];
 		c3 = &cells[sampleCelli + 1][sampleCellj + 1];
 	}
-	else if (samplePos.x > localThisCell->pos.x && samplePos.y < localThisCell->pos.y)
+	else if (samplePos.x > sampleCell->pos.x && samplePos.y < sampleCell->pos.y)
 	{
 		c0 = &cells[sampleCelli][sampleCellj - 1];
 		c1 = &cells[sampleCelli + 1][sampleCellj - 1];
-		c2 = localThisCell;
+		c2 = sampleCell;
 		c3 = &cells[sampleCelli + 1][sampleCellj];
 	}
-	else if (samplePos.x == localThisCell->pos.x && samplePos.y == localThisCell->pos.y)
+	else if (samplePos.x == sampleCell->pos.x && samplePos.y == sampleCell->pos.y)
 	{
-		return localThisCell->m;
+		return sampleCell->m;
 	}
 
 	float x = samplePos.x - c0->pos.x;
@@ -342,9 +346,21 @@ void Grid::extrapolate()
 		{
 			thisCell = &cells[i][j];
 
+			if (j==0)
+			{
+				thisCell->v = thisCell->up->v;
+			}
+			else if (j==gridCount_y-1)
+			{
+				thisCell->v = thisCell->down->v;
+			}
 			if (i==0)
 			{
-				thisCell->u = thisCell->up->u;
+				thisCell->u = 2.0f;
+			}
+			else if (i == gridCount_x - 1)
+			{
+				thisCell->u = thisCell->left->u;
 			}
 			
 		}
@@ -355,7 +371,7 @@ void Grid::simulate(double dt) {
 	ndt = dt / substeps;
 
 	// Gravity 
-	for (int i = 1; i < gridCount_x - 1; i++) 
+	/*for (int i = 1; i < gridCount_x - 1; i++) 
 	{
 		for (int j = 1; j < gridCount_y - 1; j++) 
 		{
@@ -366,7 +382,7 @@ void Grid::simulate(double dt) {
 			}
 			
 		}
-	}
+	}*/
 	
 	project(ndt);
 	//advectSmoke(dt);
@@ -392,21 +408,22 @@ void Grid::render(GraphicalObj* gobj, float &scale_x, float &scale_y)
 			{
 				// Pressure
 
-				gobj->DrawShape(glm::vec3(thisCell->u, 0.0f, thisCell->v));
+				//gobj->DrawShape(glm::vec3(thisCell->u, 0.0f, thisCell->v));
 				
+				// Smoke
 				if (thisCell->m!=0)
 				{
 					gobj->DrawShape(glm::vec3(1.0f, 1.0f, 1.0f)*thisCell->m);
-				}
-				// Density
-				//gobj->DrawShape(glm::vec3(1.0f, 1.0f, 1.0f) * thisCell->m*100.0f);
-				//cout << thisCell->m << endl;
+				}				
 			}
 			
 			else 
-				gobj->DrawShape(glm::vec3(0.0f, 0.5f, 0.0f));
+				gobj->DrawShape(glm::vec3(1.0f, 0.749f, 0.0f));
 		}
 	}
 	//cout << "pressure: " << cells[gridCount_x/2][1].p << endl;
 }
 
+//vector<vector<cell>>* Grid::getCells() {
+//	return &cells;
+//}

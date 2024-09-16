@@ -30,9 +30,9 @@ class Grid
 public:
 	Grid(int window_res_x, int window_res_y);
 	array<int, 2> getSize();
-	vector<vector<cell>> getCells();
+	//vector<vector<cell>>* getCells();
+	vector<vector<cell>> cells;
 	void render(GraphicalObj* gobj, float &scale_x, float &scale_y);
-	cell* getCellByID(int id);
 	void project(double dt);
 	void advectVelocity(double dt);
 	void advectSmoke(double dt);
@@ -56,8 +56,7 @@ public:
 private:
 	float worldSize_x = 0.4; //m
 	float worldSize_y = 0.3;
-	const float gridSize = 0.004;
-	vector<vector<cell>> cells;
+	const float gridSize = 0.003;
 	vector<cell*> cellPtrs;
 	float simgridCount_x, simgridCount_y;
 	Colors color;
@@ -76,3 +75,26 @@ private:
 	glm::vec2 samplePos{ glm::vec2(0.0f, 0.0f) }, sampleVels{ glm::vec2(0.0f, 0.0f) };
 };
 
+struct circularObj
+{
+	float x, y;
+	float radius;
+	vector<cell*> cells;
+	\
+	circularObj(float radius, float x, float y, Grid* grid)
+	{
+		this->radius = radius; this->x = x; this->y = y;
+
+		for (int i = 0; i < grid->gridCount_x - 1; i++)
+		{
+			for (int j = 0; j < grid->gridCount_y - 1; j++)
+			{
+				if (std::sqrt(std::pow(grid->cells[i][j].pos.x - x, 2) + std::pow(grid->cells[i][j].pos.y - y, 2)) <= radius)
+				{
+					this->cells.push_back(&grid->cells[i][j]);
+				}
+			}
+		}
+	}
+
+};
