@@ -56,7 +56,7 @@ public:
 private:
 	float worldSize_x = 0.4; //m
 	float worldSize_y = 0.3;
-	const float gridSize = 0.003;
+	const float gridSize = 0.002;
 	vector<cell*> cellPtrs;
 	float simgridCount_x, simgridCount_y;
 	Colors color;

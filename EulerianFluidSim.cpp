@@ -160,8 +160,8 @@ int main()
 
 	while (!glfwWindowShouldClose(window))
 	{
-		auto currentTime = high_resolution_clock::now();
-		duration<double> elapsedTime = duration_cast<microseconds>(currentTime - lastTime);
+		//auto currentTime = high_resolution_clock::now();
+		//duration<double> elapsedTime = duration_cast<microseconds>(currentTime - lastTime);
 		// input
 		process_input(window);
 		glfwPollEvents();
@@ -174,14 +174,14 @@ int main()
 			glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
 		
-			dt = elapsedTime.count() / 1000000;
+			//dt = elapsedTime.count() / 1000000;
 			// Fluid Sim
-			grid.simulate(1.0f/512.f);
+			grid.simulate(1.0f/500.f);
 			
 			// Rendering
 			grid.render(&rectangle, scale_x, scale_y);
 		}
-		lastTime = currentTime;
+		//lastTime = currentTime;
 			
 	}
 

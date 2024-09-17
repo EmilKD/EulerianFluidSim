@@ -25,7 +25,7 @@ Grid::Grid(int window_res_x, int window_res_y)
 
 	cell initialCell;
 	initialCell.m = 0.001f;
-	initialCell.u = 6.0f;
+	initialCell.u = 2.0f;
 	initialCell.v = 0;
 
 	for (int i{ 0 }; i < gridCount_x; ++i)
@@ -62,7 +62,7 @@ Grid::Grid(int window_res_x, int window_res_y)
 			}
 			if (i==0)
 			{
-				thisCell->u = 6.0f;
+				thisCell->u = 2.0f;
 			}
 			cellPtrs.push_back(thisCell);
 		}
