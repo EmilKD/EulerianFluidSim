@@ -60,6 +60,13 @@ Grid::Grid(int window_res_x, int window_res_y)
 				thisCell->u = 0;
 				thisCell->v = 0;
 			}
+			/*if (i>=gridCount_x*2/5 && i <= gridCount_x*3/5 && j>= gridCount_y * 2 / 5 && j <= gridCount_y * 3 / 5)
+			{
+				thisCell->s = 0;
+				thisCell->u = 0;
+				thisCell->v = 0;
+			}*/
+
 			if (i==0)
 			{
 				thisCell->u = 2.0f;
@@ -406,10 +413,11 @@ void Grid::render(GraphicalObj* gobj, float &scale_x, float &scale_y)
 
 			if (thisCell->s)
 			{
-				// Pressure
-
-				//gobj->DrawShape(glm::vec3(thisCell->u, 0.0f, thisCell->v));
 				
+				// Velocity Field
+				//gobj->DrawShape(glm::vec3(thisCell->u, 0.0f, thisCell->v));
+				// Pressure
+				//gobj->DrawShape(glm::vec3(thisCell->p/10000000, 0.0f, 0.0f));
 				// Smoke
 				if (thisCell->m!=0)
 				{
