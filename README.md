@@ -3,7 +3,7 @@ This is a practice project for learning more about real-time simulations and imp
 The visualization of the simulator is done using an OpenGL project i'd developed earlier.
 
 ## Here's a short demo.
-<src=https://github.com/EmilKD/EulerianFluidSim/blob/master/Export/EulerianFluidSimulation/EulerianFluidSimulation.mp4>
+<src=https://github.com/EmilKD/EulerianFluidSim/blob/master/Export/EulerianFluidSimulation/EulerianFluidSimulation.mp4\>
 
 ## refrences:
 Mathias Muler ten minute physics [tutorials](https://matthias-research.github.io/pages/tenMinutePhysics/index.html)
