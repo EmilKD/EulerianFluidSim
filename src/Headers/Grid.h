@@ -72,15 +72,15 @@ private:
 	float avgV{ 0.0f }, avgU{ 0.0f };
 	cell* thisCell{ nullptr };
 	cell* c0 = nullptr, * c1 = nullptr, * c2 = nullptr, * c3 = nullptr, * c4 = nullptr, * c5 = nullptr, * c6 = nullptr, * c7 = nullptr;
-	glm::vec2 samplePos{ glm::vec2(0.0f, 0.0f) }, sampleVels{ glm::vec2(0.0f, 0.0f) };
+	glm::vec2 samplePos{ glm::vec2(0.0f, 0.0f) }, sampleVels{ glm::vec2(0.0f, 0.0f) };	
 };
 
 struct circularObj
 {
-	float x, y;
-	float radius;
-	vector<cell*> cells;
-	\
+	float x{ 0.0f }, y{ 0.0f };
+	float radius{ 0.05f };
+	vector<cell*> cells{};
+
 	circularObj(float radius, float x, float y, Grid* grid)
 	{
 		this->radius = radius; this->x = x; this->y = y;

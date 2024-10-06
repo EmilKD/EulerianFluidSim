@@ -415,9 +415,12 @@ void Grid::render(GraphicalObj* gobj, float &scale_x, float &scale_y)
 			{
 				
 				// Velocity Field
-				//gobj->DrawShape(glm::vec3(thisCell->u, 0.0f, thisCell->v));
+				/*if (thisCell->v >= 0)
+					gobj->DrawShape(glm::vec3(thisCell->v, 0.0f, 0.0f));
+				else
+					gobj->DrawShape(glm::vec3(0.0f, 0.0f, std::abs(thisCell->v)));*/
 				// Pressure
-				//gobj->DrawShape(glm::vec3(thisCell->p/10000000, 0.0f, 0.0f));
+				//gobj->DrawShape(glm::vec3(thisCell->p/100000000, 0.0f, 0.0f));
 				// Smoke
 				if (thisCell->m!=0)
 				{
