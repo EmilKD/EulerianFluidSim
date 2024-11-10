@@ -90,21 +90,6 @@ This file sets up the window and the main simulation loop, including:
 - **Input Handling**: Processes user inputs for interaction with the simulation.
 - **Rendering Loop**: Continuously updates and renders the fluid simulation.
 
-### Example Code Snippet
-
-```cpp
-Grid::Grid(int window_res_x, int window_res_y) {
-    // Initialization code...
-}
-
-void Grid::project(double dt) {
-    // Projection step...
-}
-
-void Grid::advectVelocity(double dt) {
-    // Advection step...
-}
-```
 
 ## Contributions
 
