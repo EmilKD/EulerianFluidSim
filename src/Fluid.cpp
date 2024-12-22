@@ -156,7 +156,7 @@ void Fluid::InitializeGraphics(const Shader& shader)
 	// Position VBO
 	glGenBuffers(1, &PositionVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, PositionVBO);
-	glBufferData(GL_ARRAY_BUFFER, PositionBuffer.size() * sizeof(glm::vec3), PositionBuffer.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, PositionBuffer.size() * sizeof(float), PositionBuffer.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	glEnableVertexAttribArray(0);
 
