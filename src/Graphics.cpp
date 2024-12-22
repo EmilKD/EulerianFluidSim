@@ -2,7 +2,7 @@
 
 
 // Graphical Object Class Functions -----------------------------------------------------------------------------------
-GraphicalObj::GraphicalObj(Shader& shader, const char* TexturefilePath) : Objshader{shader}, texturePath{TexturefilePath}
+GraphicalObj::GraphicalObj(Shader& shader) : Objshader{shader}
 {
 	//Objshader.CreateTexture(TexturefilePath);
 	BufferUpdate();
@@ -45,24 +45,17 @@ void GraphicalObj::BufferUpdate()
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBuffer.size() * sizeof(int), static_cast<const void*>(indexBuffer.data()), GL_STATIC_DRAW);
 	}
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
-	
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(float)));
+	glEnableVertexAttribArray(1);	
 }
 
-void GraphicalObj::DrawShape(glm::vec3 color)
+void GraphicalObj::Draw(glm::vec3 color)
 {
-	this->Objshader.use();
-
 	// Setting the Color
 	this->Objshader.set3fv("myColor", color);
-	//glBindTexture(GL_TEXTURE_2D, this->Objshader.texture);
 
 	if (!indexBuffer.empty())
 	{	

@@ -158,7 +158,7 @@
     <ClCompile Include="EulerianFluidSim.cpp" />
     <ClCompile Include="Libraries\glad.c" />
     <ClCompile Include="src\Graphics.cpp" />
-    <ClCompile Include="src\Grid.cpp" />
+    <ClCompile Include="src\Fluid.cpp" />
     <ClCompile Include="src\Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -167,7 +167,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Headers\Graphics.h" />
-    <ClInclude Include="src\Headers\Grid.h" />
+    <ClInclude Include="src\Headers\Fluid.h" />
     <ClInclude Include="src\Headers\Shader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

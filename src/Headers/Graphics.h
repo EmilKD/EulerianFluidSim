@@ -21,20 +21,20 @@ struct Colors
 class GraphicalObj {
 
 public:
-	GraphicalObj(Shader &shader, const char* TexturefilePath);
+	GraphicalObj(Shader &shader);
 	~GraphicalObj();
 	void VertexUpdate(vector<float>* vertices, vector<int>* indices);
 	void BufferUpdate();
-	void DrawShape(glm::vec3 color);
+	void Draw(glm::vec3 color);
 	void transform(glm::vec3 scale, glm::vec3 translate, glm::float32 rotate = 0.0f);
 	Shader getShader();
 
 	vector<float> vertexBuffer = {
-		// Postition             Colors                   Texture Coords
-		1.0f, 1.0f, 0.0f,        0.0f, 0.0f, 0.0f,        1.0f, 1.0f,          //top right
-		1.0f, -1.0f, 0.0f,       0.0f, 0.0f, 0.0f,        1.0f, 0.0f,          //bottom right
-		-1.0f, -1.0f, 0.0f,      0.0f, 0.0f, 0.0f,        0.0f, 0.0f,          //bottom left
-		-1.0f, 1.0f, 0.0f,       0.0f, 0.0f, 0.0f,      0.0f, 1.0f           //top left
+		// Postition             Colors                   
+		1.0f, 1.0f, 0.0f,        0.0f, 0.0f, 0.0f,          //top right
+		1.0f, -1.0f, 0.0f,       0.0f, 0.0f, 0.0f,          //bottom right
+		-1.0f, -1.0f, 0.0f,      0.0f, 0.0f, 0.0f,          //bottom left
+		-1.0f, 1.0f, 0.0f,       0.0f, 0.0f, 0.0f,          //top left
 	};
 
 	vector<int> indexBuffer = {
