@@ -6,16 +6,11 @@
 using std::cout, std::endl, std::vector, std::array;
 using namespace std::chrono;
 
-//=====================================================================================================================
-// Variables and Objects declaration-----------------------------------------------------------------------------------
-//=====================================================================================================================
-
+// Global Variables and Objects declaration
 bool left_mouse_button;
 bool right_mouse_button;
 
-
 float gc_x, gc_y, wc_x, wc_y, prevc_x, prevc_y;
-
 
 class PhysicsWorld
 {
@@ -68,6 +63,7 @@ int main()
 {
 	// GLFW initialization
 	glfwInit();
+	
 
 	// setting window hints aka OpenGL version and profile
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -102,6 +98,8 @@ int main()
 	glfwSetMouseButtonCallback(window, mouse_clicked);
 	glfwSetKeyCallback(window, key_callback);
 
+	glEnable(GL_PROGRAM_POINT_SIZE);
+
 	// Shader Compilation 
 	Shader MainShader;
 
@@ -117,11 +115,10 @@ int main()
 	auto lastTime = high_resolution_clock::now();
 
 	fluid.AddObstacle(&circle);
+	fluid.InitializeGraphics(MainShader);
+
 	PhysWorld.dtmin = 0.5f * fluid.gridSize / fluid.InletVel[0];
 	printf("world dt_min: %f", PhysWorld.dtmin);
-	// Creating the grid graphical object
-	//constexpr int VertexArraySize{ grid.gridCount_x * grid.gridCount_y * 2 };
-	//float GridVertexBuffer[VertexArraySize];
 
 	while (!glfwWindowShouldClose(window))
 	{

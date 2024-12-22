@@ -30,7 +30,7 @@ void GraphicalObj::VertexUpdate(vector<float>*vertices, vector<int>*indices = NU
 
 void GraphicalObj::BufferUpdate()
 {
-	glGenBuffers(1, &this->VBO);
+	/*glGenBuffers(1, &this->VBO);
 	glGenVertexArrays(1, &this->VAO);
 	glGenBuffers(1, &this->EBO);
 
@@ -49,7 +49,7 @@ void GraphicalObj::BufferUpdate()
 	glEnableVertexAttribArray(0);
 
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(float)));
-	glEnableVertexAttribArray(1);	
+	glEnableVertexAttribArray(1);	*/
 }
 
 void GraphicalObj::Draw(glm::vec3 color)

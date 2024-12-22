@@ -47,6 +47,5 @@ public:
 private:
 	Shader Objshader;
 	GLuint VBO{}, VAO{}, EBO{};
-	const char* texturePath;
 };
 #endif // !GUI_H4

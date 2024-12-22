@@ -42,6 +42,8 @@ public:
 	void extrapolate();
 	void AddObstacle(CircularObj* obj);
 	void UpdateObstacle(int id);
+	void UpdateColorBuffer(int idx);
+	void InitializeGraphics(const Shader& shader);
 	glm::vec2 sampleVelocity(const glm::vec2 &samplePos);
 	float sampleDensity(const glm::vec2& samplePos);
 
@@ -54,7 +56,7 @@ public:
 	}
 
 public:
-	static constexpr float gridSize = 0.0035; // meters
+	static constexpr float gridSize = 0.0025; // meters
 	const int gridCount_x;
 	const int gridCount_y;
 	vector<cell> cells;
@@ -66,8 +68,15 @@ private:
 	vector<cell*> cellPtrs;
 	vector<CircularObj*> Obstacles{};
 	vector<uint32_t> IterHeight, IterWidth, IterIndices, IterSubSteps;
+
+	// Creating the grid graphical object
+	const int ArraySize{ gridCount_x * gridCount_y };
+	vector<float> PositionBuffer;
+	vector<float> ColorBuffer;
+	GLuint PositionVBO, ColorVBO, VAO;
+
 	Colors color;
-	int substeps{ 100 };
+	int substeps{ 40 };
 	double ndt{ 0 }, d;
 	float de{1.0}, cp;
 	float density{ 1000.0f };

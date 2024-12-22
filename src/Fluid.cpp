@@ -11,6 +11,26 @@ bool randomBool() {
 	return gen();
 }
 
+void Fluid::UpdateColorBuffer(int idx)
+{
+	const cell& thisCell = cells[idx];
+	if (thisCell.s)
+	{
+		if (thisCell.m != 0)
+		{
+			ColorBuffer[idx * 3] = thisCell.m;
+			ColorBuffer[idx * 3 + 1] = thisCell.m;
+			ColorBuffer[idx * 3 + 2] = thisCell.m;
+		}
+	}
+	else
+	{
+		ColorBuffer[idx * 3] = 1.0f;
+		ColorBuffer[idx * 3 + 1] = 0.749f;
+		ColorBuffer[idx * 3 + 2] = 0.f;
+	}
+}
+
 Fluid::Fluid(const float& Size_x, const float& Size_y) : 
 	gridCount_x{ static_cast<int>(Size_x / gridSize) }, 
 	gridCount_y{ static_cast<int>(Size_y / gridSize) }, 
@@ -83,7 +103,6 @@ Fluid::Fluid(const float& Size_x, const float& Size_y) :
 				for (size_t i = 1 + p; i < gridCount_x - 1; i += spacing)
 					IterIndices[i - 1 + (j - 1) * (gridCount_x - 2)] = i + j * gridCount_x;
 				
-	
 	if ((gridCount_x - 2) * (gridCount_y - 2) != IterIndices.size())
 	{
 		printf("Iterator size: %i\n", IterIndices.size());
@@ -99,10 +118,64 @@ Fluid::Fluid(const float& Size_x, const float& Size_y) :
 	}*/
 }
 
+void Fluid::InitializeGraphics(const Shader& shader)
+{
+	// Buffers
+	PositionBuffer.resize(ArraySize * 2);
+	ColorBuffer.resize(ArraySize * 3);
+
+	for (size_t i = 0; i < ArraySize; i++)
+	{
+		PositionBuffer[i * 2] = xC(cells[i].pos.x);
+		PositionBuffer[i * 2 + 1] = yC(cells[i].pos.y);
+	}
+	for (size_t i = 0; i < ArraySize; i++)
+	{
+		const cell& thisCell = cells[i];
+		if (thisCell.s)
+		{
+			if (thisCell.m != 0)
+			{
+				ColorBuffer[i * 3] = thisCell.m;
+				ColorBuffer[i * 3 + 1] = thisCell.m;
+				ColorBuffer[i * 3 + 2] = thisCell.m;
+			}
+		}
+		else
+		{
+			ColorBuffer[i * 3] = 1.0f;
+			ColorBuffer[i * 3 + 1] = 0.749f;
+			ColorBuffer[i * 3 + 2] = 0.f;
+		}
+	}
+
+	// Create and bind VAO
+	glGenVertexArrays(1, &this->VAO);
+	glBindVertexArray(this->VAO);
+
+	// Position VBO
+	glGenBuffers(1, &PositionVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, PositionVBO);
+	glBufferData(GL_ARRAY_BUFFER, PositionBuffer.size() * sizeof(glm::vec3), PositionBuffer.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// Color VBO
+	glGenBuffers(1, &ColorVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, ColorVBO);
+	glBufferData(GL_ARRAY_BUFFER, ColorBuffer.size() * sizeof(float), ColorBuffer.data(), GL_DYNAMIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glEnableVertexAttribArray(1);
+
+	// Unbind VAO
+	glBindVertexArray(0);
+
+	shader.setFloat("pointSize", 800.f / gridCount_x);
+}
+
 void Fluid::AddObstacle(CircularObj* obj)
 {
 	this->Obstacles.push_back(obj);
-
 	UpdateObstacle(Obstacles.size() - 1);
 }
 
@@ -114,6 +187,7 @@ void Fluid::UpdateObstacle(int id)
 		c->s = 0;
 		c->u = sin((c->pos.x - obstacle->x) / obstacle->radius) * obstacle->u;
 		c->v = cos((c->pos.y - obstacle->y) / obstacle->radius) * obstacle->v;
+		c->m = 0;
 	}
 }
 
@@ -133,7 +207,7 @@ void Fluid::project(double dt) {
 			const double d = cells[thisCell->id_right].u - thisCell->u + cells[thisCell->id_up].v - thisCell->v;
 			const int s = cells[thisCell->id_down].s + cells[thisCell->id_up].s + cells[thisCell->id_left].s + cells[thisCell->id_right].s;
 
-			if (s == 0)
+			if (s == 0) // Obstacle velocity should be added
 				return;
 
 			p = -d / s;
@@ -184,20 +258,24 @@ void Fluid::advectVelocity(double dt)
 	{
 		std::for_each(std::execution::par_unseq, IterWidth.begin(), IterWidth.end(), [this, &j](uint32_t i)
 		{
-			cell* const thisCell = &cells[i + j * gridCount_x];
-			thisCell->u = thisCell->newU;
-			thisCell->v = thisCell->newV;
-			thisCell->m = thisCell->newM;
-
+			cell& thisCell = cells[i + j * gridCount_x];
 			if (i == 1)
 			{
-				thisCell->u = InletVel[0];
-				thisCell->v = InletVel[1];
+				thisCell.u = InletVel[0];
+				thisCell.v = InletVel[1];
+				if (j > 2 * gridCount_y / 5.0f && j < 3 * gridCount_y / 5.0f)
+				{
+					thisCell.m = 1;
+					return;
+				}
+				return;
 			}
-			if (i == 1 && j > 2 * gridCount_y / 5.0f && j < 3 * gridCount_y / 5.0f)
-			{
-				thisCell->m = 1;
-			}
+			
+			thisCell.u = thisCell.newU;
+			thisCell.v = thisCell.newV;
+			thisCell.m = thisCell.newM;
+
+			UpdateColorBuffer(i + j * gridCount_x);
 		});
 	});
 }
@@ -422,29 +500,19 @@ void Fluid::simulate(double dt) {
 
 void Fluid::render(GraphicalObj* gobj, const float &renderScale_x, const float &renderScale_y)
 {
-	glm::vec2 testPos = glm::vec2(0, 0.0f);
+	glBindVertexArray(VAO);
 
-	for (int i{ 0 }; i < gridCount_x; i++)
-	{
-		for (int j{ 0 }; j < gridCount_y; j++) 
-		{
-			const cell* thisCell = &cells[i + j * gridCount_x];
-			// Rendering
-			gobj->transform(glm::vec3(renderScale_x, renderScale_y, 0.0f), glm::vec3(xC(thisCell->pos.x), yC(thisCell->pos.y), 0.0f));
+	glBindBuffer(GL_ARRAY_BUFFER, PositionVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, PositionBuffer.size() * sizeof(float), PositionBuffer.data());
 
-			if (thisCell->s)
-			{
-				if (thisCell->m!=0)
-				{
-					gobj->Draw(glm::vec3(1.0f, 1.0f, 1.0f)*thisCell->m);
-				}				
-			}
-			
-			else 
-				gobj->Draw(glm::vec3(1.0f, 0.749f, 0.0f));
-		}
-	}
-	//cout << "pressure: " << cells[gridCount_x/2][1].p << endl;
+	glBindBuffer(GL_ARRAY_BUFFER, ColorVBO);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, ColorBuffer.size() * sizeof(float), ColorBuffer.data());
+
+	// Render all cells
+	glDrawArrays(GL_POINTS, 0, ArraySize);
+
+	// Unbind VAO
+	glBindVertexArray(0);
 }
 
 //vector<vector<cell>>* Grid::getCells() {
