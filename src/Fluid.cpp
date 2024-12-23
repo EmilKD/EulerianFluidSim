@@ -11,26 +11,6 @@ bool randomBool() {
 	return gen();
 }
 
-void Fluid::UpdateColorBuffer(int idx)
-{
-	const cell& thisCell = cells[idx];
-	if (thisCell.s)
-	{
-		if (thisCell.m != 0)
-		{
-			ColorBuffer[idx * 3] = thisCell.m;
-			ColorBuffer[idx * 3 + 1] = thisCell.m;
-			ColorBuffer[idx * 3 + 2] = thisCell.m;
-		}
-	}
-	else
-	{
-		ColorBuffer[idx * 3] = 1.0f;
-		ColorBuffer[idx * 3 + 1] = 0.749f;
-		ColorBuffer[idx * 3 + 2] = 0.f;
-	}
-}
-
 Fluid::Fluid(const float& Size_x, const float& Size_y) : 
 	gridCount_x{ static_cast<int>(Size_x / gridSize) }, 
 	gridCount_y{ static_cast<int>(Size_y / gridSize) }, 
@@ -65,7 +45,7 @@ Fluid::Fluid(const float& Size_x, const float& Size_y) :
 			thisCell->s = 1;
 
 			// Boundary conditions
-			if (i == 0 || j == 0 || j == gridCount_y - 1) {
+			if (i == 0 || i == gridCount_x - 1 || j == 0 || j == gridCount_y - 1) {
 				thisCell->s = 0;
 				thisCell->u = 0;
 				thisCell->v = 0;
@@ -74,14 +54,16 @@ Fluid::Fluid(const float& Size_x, const float& Size_y) :
 				thisCell->s = 0;
 			}*/
 
-			if (i==0)
+			/*if (i==0)
 			{
 				thisCell->u = InletVel[0];
 				thisCell->v = InletVel[1];
-			}
+			}*/
 			cellPtrs.push_back(thisCell);
 		}
 	}
+
+	ParticleInit();
 
 	IterWidth.resize(gridCount_x-2);
 	for (size_t i = 1; i < gridCount_x-1; i++)
@@ -125,30 +107,11 @@ void Fluid::InitializeGraphics(const Shader& shader)
 	ColorBuffer.resize(ArraySize * 3);
 
 	for (size_t i = 0; i < ArraySize; i++)
-	{
-		PositionBuffer[i * 2] = xC(cells[i].pos.x);
-		PositionBuffer[i * 2 + 1] = yC(cells[i].pos.y);
-	}
+		UpdatePosBuffer(i);
+	
 	for (size_t i = 0; i < ArraySize; i++)
-	{
-		const cell& thisCell = cells[i];
-		if (thisCell.s)
-		{
-			if (thisCell.m != 0)
-			{
-				ColorBuffer[i * 3] = thisCell.m;
-				ColorBuffer[i * 3 + 1] = thisCell.m;
-				ColorBuffer[i * 3 + 2] = thisCell.m;
-			}
-		}
-		else
-		{
-			ColorBuffer[i * 3] = 1.0f;
-			ColorBuffer[i * 3 + 1] = 0.749f;
-			ColorBuffer[i * 3 + 2] = 0.f;
-		}
-	}
-
+		UpdateColorBuffer(i);
+	
 	// Create and bind VAO
 	glGenVertexArrays(1, &this->VAO);
 	glBindVertexArray(this->VAO);
@@ -156,7 +119,7 @@ void Fluid::InitializeGraphics(const Shader& shader)
 	// Position VBO
 	glGenBuffers(1, &PositionVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, PositionVBO);
-	glBufferData(GL_ARRAY_BUFFER, PositionBuffer.size() * sizeof(float), PositionBuffer.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, PositionBuffer.size() * sizeof(float), PositionBuffer.data(), GL_DYNAMIC_DRAW);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 	glEnableVertexAttribArray(0);
 
@@ -170,7 +133,24 @@ void Fluid::InitializeGraphics(const Shader& shader)
 	// Unbind VAO
 	glBindVertexArray(0);
 
-	shader.setFloat("pointSize", 800.f / gridCount_x);
+	shader.setFloat("pointSize", 2.f);
+}
+
+void Fluid::UpdatePosBuffer(int idx)
+{
+	const particle& p = particles[idx];
+
+	PositionBuffer[idx * 2] = xC(p.pos.x);
+	PositionBuffer[idx * 2 + 1] = yC(p.pos.y);
+}
+
+void Fluid::UpdateColorBuffer(int idx)
+{
+	const particle& p = particles[idx];
+
+	ColorBuffer[idx * 3] = 0.f;
+	ColorBuffer[idx * 3 + 1] = abs(p.vel.y);
+	ColorBuffer[idx * 3 + 2] = abs(p.vel.x);
 }
 
 void Fluid::AddObstacle(CircularObj* obj)
@@ -230,21 +210,27 @@ void Fluid::advectVelocity(double dt)
 		std::for_each(std::execution::par_unseq, IterWidth.begin(), IterWidth.end(), [this, &dt, &j](uint32_t i)
 		{
 			cell* const thisCell = &cells[i + j * gridCount_x];
-			if (thisCell->s == 1 && cells[thisCell->id_left].s == 1 && i < gridCount_x - 2)
+			if (thisCell->s == 0)
 			{
-				avgV = (thisCell->v + cells[thisCell->id_left].v + cells[thisCell->id_up].v + cells[i - 1 + (j + 1) * gridCount_x].v) / 4.0f;
-
-				const glm::vec2 samplePos{ thisCell->pos.x - gridSize / 2.0f - dt * thisCell->u, thisCell->pos.y - dt * avgV };
-				thisCell->newU = sampleVelocity(samplePos).x;
+				return;
 			}
-			if (thisCell->s == 1 && cells[thisCell->id_down].s == 1 && j < gridCount_y - 2)
+			else
 			{
-				avgU = (thisCell->u + cells[thisCell->id_right].u + cells[thisCell->id_down].u + cells[i + 1 + (j - 1) * gridCount_x].u) / 4.0f;
+				if (cells[thisCell->id_left].s == 1 && i < gridCount_x - 2)
+				{
+					avgV = (thisCell->v + cells[thisCell->id_left].v + cells[thisCell->id_up].v + cells[i - 1 + (j + 1) * gridCount_x].v) / 4.0f;
 
-				const glm::vec2 samplePos{ thisCell->pos.x - dt * avgU, thisCell->pos.y - gridSize / 2.0f - dt * thisCell->v };
-				thisCell->newV = sampleVelocity(samplePos).y;
-			}
-			if (thisCell->s == 1) {
+					const glm::vec2 samplePos{ thisCell->pos.x - gridSize / 2.0f - dt * thisCell->u, thisCell->pos.y - dt * avgV };
+					thisCell->newU = sampleVelocity(samplePos).x;
+				}
+				if (cells[thisCell->id_down].s == 1 && j < gridCount_y - 2)
+				{
+					avgU = (thisCell->u + cells[thisCell->id_right].u + cells[thisCell->id_down].u + cells[i + 1 + (j - 1) * gridCount_x].u) / 4.0f;
+
+					const glm::vec2 samplePos{ thisCell->pos.x - dt * avgU, thisCell->pos.y - gridSize / 2.0f - dt * thisCell->v };
+					thisCell->newV = sampleVelocity(samplePos).y;
+				}
+
 				avgU = (thisCell->u + cells[thisCell->id_right].u) / 2.0f;
 				avgV = (thisCell->v + cells[thisCell->id_up].v) / 2.0f;
 
@@ -259,23 +245,12 @@ void Fluid::advectVelocity(double dt)
 		std::for_each(std::execution::par_unseq, IterWidth.begin(), IterWidth.end(), [this, &j](uint32_t i)
 		{
 			cell& thisCell = cells[i + j * gridCount_x];
-			if (i == 1)
-			{
-				thisCell.u = InletVel[0];
-				thisCell.v = InletVel[1];
-				if (j > 2 * gridCount_y / 5.0f && j < 3 * gridCount_y / 5.0f)
-				{
-					thisCell.m = 1;
-					return;
-				}
-				return;
-			}
 			
 			thisCell.u = thisCell.newU;
 			thisCell.v = thisCell.newV;
 			thisCell.m = thisCell.newM;
 
-			UpdateColorBuffer(i + j * gridCount_x);
+			//UpdateColorBuffer(i + j * gridCount_x);
 		});
 	});
 }
@@ -474,11 +449,40 @@ void Fluid::extrapolate()
 	}
 }
 
+void Fluid::ParticleInit()
+{
+	for (size_t i = 0; i < ArraySize; i++)
+	{
+		particles.push_back(particle(cells[i].pos, glm::vec2(0.f)));
+	}
+}
+
+void Fluid::SimulateParticles(const float& dt) 
+{
+	for (size_t i = 0; i < particles.size(); i++)
+	{
+		particle& p = particles[i];
+		p.vel.y += -9.87 * dt;
+		p.pos += p.vel * dt;
+
+		if (p.pos.y < 0)
+		{
+			p.pos.y = 0;
+			p.vel.y *= -1;
+		}
+		// next up particle collision ...
+
+		UpdatePosBuffer(i);
+		UpdateColorBuffer(i);
+	}
+	
+}
+
 void Fluid::simulate(double dt) {
 	ndt = dt / substeps;
 
 #define GRAVITY 1
-#ifdef GRACITY
+#ifdef GRAVITY
 	for (int i = 1; i < gridCount_x - 1; i++) 
 	{
 		for (int j = 1; j < gridCount_y - 1; j++) 
@@ -495,6 +499,7 @@ void Fluid::simulate(double dt) {
 	project(ndt);
 	extrapolate();
 	advectVelocity(dt);
+	SimulateParticles(dt);
 	simulationTime += dt;
 }
 

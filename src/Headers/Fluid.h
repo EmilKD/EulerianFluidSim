@@ -27,6 +27,13 @@ struct cell
 	int id_right{ 0 }, id_left{ 0 }, id_up{ 0 }, id_down{ 0 };
 };
 
+struct particle
+{
+	glm::vec2 pos;
+	glm::vec2 vel;
+	glm::vec3 color;
+};
+
 struct CircularObj;
 
 class Fluid
@@ -42,8 +49,13 @@ public:
 	void extrapolate();
 	void AddObstacle(CircularObj* obj);
 	void UpdateObstacle(int id);
+	void UpdatePosBuffer(int idx);
 	void UpdateColorBuffer(int idx);
 	void InitializeGraphics(const Shader& shader);
+	
+	void ParticleInit();
+	void SimulateParticles(const float& dt);
+
 	glm::vec2 sampleVelocity(const glm::vec2 &samplePos);
 	float sampleDensity(const glm::vec2& samplePos);
 
@@ -56,7 +68,7 @@ public:
 	}
 
 public:
-	static constexpr float gridSize = 0.002; // meters
+	static constexpr float gridSize = 0.003; // meters
 	const int gridCount_x;
 	const int gridCount_y;
 	vector<cell> cells;
@@ -68,6 +80,7 @@ private:
 	vector<cell*> cellPtrs;
 	vector<CircularObj*> Obstacles{};
 	vector<uint32_t> IterHeight, IterWidth, IterIndices, IterSubSteps;
+	vector<particle> particles;
 
 	// Creating the grid graphical object
 	const int ArraySize{ gridCount_x * gridCount_y };
@@ -98,9 +111,9 @@ struct CircularObj
 		FluidGrid = grid;
 		this->radius = radius; this->x = x; this->y = y;
 
-		for (int i = 0; i < grid->gridCount_x - 1; i++)
+		for (int i = 1; i < grid->gridCount_x - 1; i++)
 		{
-			for (int j = 0; j < grid->gridCount_y - 1; j++)
+			for (int j = 1; j < grid->gridCount_y - 1; j++)
 			{
 				if (std::sqrt(std::pow(grid->cells[i + j * grid->gridCount_x].pos.x - x, 2) + std::pow(grid->cells[i + j*grid->gridCount_x].pos.y - y, 2)) <= radius)
 				{
@@ -117,9 +130,9 @@ struct CircularObj
 			c->s = 1;
 		
 		cells.clear();
-		for (int i = 0; i < FluidGrid->gridCount_x - 1; i++)
+		for (int i = 1; i < FluidGrid->gridCount_x - 1; i++)
 		{
-			for (int j = 0; j < FluidGrid->gridCount_y - 1; j++)
+			for (int j = 1; j < FluidGrid->gridCount_y - 1; j++)
 			{
 				if (std::sqrt(std::pow(FluidGrid->cells[i + j * FluidGrid->gridCount_x].pos.x - x, 2) + std::pow(FluidGrid->cells[i + j * FluidGrid->gridCount_x].pos.y - y, 2)) <= radius)
 				{
