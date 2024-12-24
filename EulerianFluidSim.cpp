@@ -46,8 +46,8 @@ Fluid fluid(PhysWorld.worldSize_x, PhysWorld.worldSize_y);
 CircularObj circle(PhysWorld.worldSize_x / 2.0f - 0.05, PhysWorld.worldSize_y / 2.0f, 0.03f, &fluid);
 
 // Rendering
-constexpr float windowScale = 800.0f / PhysWorld.worldSize_x;
-constexpr int windowSize[2]{ 800, PhysWorld.worldSize_y * windowScale };
+constexpr float windowScale = 1000.0f / PhysWorld.worldSize_x;
+constexpr int windowSize[2]{ 1000, PhysWorld.worldSize_y * windowScale };
 const float renderScale_x = float(1.0f / fluid.gridCount_x);
 const float renderScale_y = float(1.0f / fluid.gridCount_y);
 

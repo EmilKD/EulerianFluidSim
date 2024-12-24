@@ -5,6 +5,7 @@
 #include<glm/gtc/type_ptr.hpp>
 #include<vector>
 #include<array>
+#include<execution>
 #include "Graphics.h"
 
 using std::vector, std::array;
@@ -91,6 +92,7 @@ struct CircularObj
 	float radius{ 0.05f };
 	float u{ 0.f }, v{ 0.f };
 	vector<cell*> cells{};
+	vector<uint32_t> IterSphere;
 	Fluid* FluidGrid{ nullptr };
 
 	CircularObj(const float x, const float y, const float radius, Fluid* grid)
@@ -98,16 +100,19 @@ struct CircularObj
 		FluidGrid = grid;
 		this->radius = radius; this->x = x; this->y = y;
 
-		for (int i = 0; i < grid->gridCount_x - 1; i++)
+		for (int i = int((x - radius) / FluidGrid->gridSize); i < int((x + radius) / FluidGrid->gridSize); i++)
 		{
-			for (int j = 0; j < grid->gridCount_y - 1; j++)
+			for (int j = int((y - radius) / FluidGrid->gridSize); j < int((y + radius) / FluidGrid->gridSize); j++)
 			{
-				if (std::sqrt(std::pow(grid->cells[i + j * grid->gridCount_x].pos.x - x, 2) + std::pow(grid->cells[i + j*grid->gridCount_x].pos.y - y, 2)) <= radius)
+				const int& idx = i + j * grid->gridCount_x;
+				if (std::sqrt(std::pow(grid->cells[idx].pos.x - x, 2) + std::pow(grid->cells[idx].pos.y - y, 2)) <= radius)
 				{
-					this->cells.push_back(&grid->cells[i + j * grid->gridCount_x]);
+					this->cells.push_back(&grid->cells[idx]);
+					IterSphere.push_back(idx);
 				}
 			}
 		}
+
 	}
 
 	void Update(const float x, const float y, const float radius, const float u, const float v)
@@ -117,13 +122,15 @@ struct CircularObj
 			c->s = 1;
 		
 		cells.clear();
-		for (int i = 0; i < FluidGrid->gridCount_x - 1; i++)
+		
+		for (int i = int((x - radius) / FluidGrid->gridSize); i < int((x + radius) / FluidGrid->gridSize); i++)
 		{
-			for (int j = 0; j < FluidGrid->gridCount_y - 1; j++)
+			for (int j = int((y - radius) / FluidGrid->gridSize); j < int((y + radius) / FluidGrid->gridSize); j++)
 			{
-				if (std::sqrt(std::pow(FluidGrid->cells[i + j * FluidGrid->gridCount_x].pos.x - x, 2) + std::pow(FluidGrid->cells[i + j * FluidGrid->gridCount_x].pos.y - y, 2)) <= radius)
+				const int& idx = i + j * FluidGrid->gridCount_x;
+				if (std::sqrt(std::pow(FluidGrid->cells[idx].pos.x - x, 2) + std::pow(FluidGrid->cells[idx].pos.y - y, 2)) <= radius)
 				{
-					this->cells.push_back(&FluidGrid->cells[i + j * FluidGrid->gridCount_x]);
+					this->cells.push_back(&FluidGrid->cells[idx]);
 				}
 			}
 		}

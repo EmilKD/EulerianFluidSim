@@ -4,7 +4,6 @@
 #include "Fluid.h"
 #include<math.h>
 #include<algorithm>
-#include<execution>
 
 bool randomBool() {
 	static auto gen = std::bind(std::uniform_int_distribution<>(0, 1), std::default_random_engine());
@@ -118,7 +117,7 @@ Fluid::Fluid(const float& Size_x, const float& Size_y) :
 	}*/
 }
 
-void Fluid::InitializeGraphics(const Shader& shader)
+void Fluid::InitializeGraphics(const Shader& shader) // Should be seperated from the fluid class
 {
 	// Buffers
 	PositionBuffer.resize(ArraySize * 2);
@@ -170,7 +169,7 @@ void Fluid::InitializeGraphics(const Shader& shader)
 	// Unbind VAO
 	glBindVertexArray(0);
 
-	shader.setFloat("pointSize", 800.f / gridCount_x);
+	shader.setFloat("pointSize", 1000.f / gridCount_x);
 }
 
 void Fluid::AddObstacle(CircularObj* obj)
