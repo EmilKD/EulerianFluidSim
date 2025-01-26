@@ -137,7 +137,7 @@ int main()
 			glClear(GL_COLOR_BUFFER_BIT);
 		
 			const double dt = std::min(PhysWorld.dtmin, elapsedTime.count());
-			printf("real-time factor: %f\n", PhysWorld.dtmin / elapsedTime.count());
+			//printf("real-time factor: %f\n", PhysWorld.dtmin / elapsedTime.count()); // real-time measure
 			// Fluid Sim
 			//std::printf("%f\n", dt);
 			fluid.simulate(dt);

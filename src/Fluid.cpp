@@ -87,7 +87,7 @@ Fluid::Fluid(const float& Size_x, const float& Size_y) :
 				
 	if ((gridCount_x - 2) * (gridCount_y - 2) != IterIndices.size())
 	{
-		printf("Iterator size: %i\n", IterIndices.size());
+		printf("Iterator size: %i\n", int(IterIndices.size()));
 		printf("correct size: %i\n", (gridCount_x - 2) * (gridCount_y - 2));
 		throw std::invalid_argument("iterator construction failed");
 	}
@@ -106,10 +106,10 @@ void Fluid::InitializeGraphics(const Shader& shader)
 	PositionBuffer.resize(ArraySize * 2);
 	ColorBuffer.resize(ArraySize * 3);
 
-	for (size_t i = 0; i < ArraySize; i++)
+	for (size_t i = 0; i < ArraySize / 2; i++)
 		UpdatePosBuffer(i);
 	
-	for (size_t i = 0; i < ArraySize; i++)
+	for (size_t i = 0; i < ArraySize / 2; i++)
 		UpdateColorBuffer(i);
 	
 	// Create and bind VAO
@@ -133,7 +133,7 @@ void Fluid::InitializeGraphics(const Shader& shader)
 	// Unbind VAO
 	glBindVertexArray(0);
 
-	shader.setFloat("pointSize", 2.f);
+	shader.setFloat("pointSize", 5.f);
 }
 
 void Fluid::UpdatePosBuffer(int idx)
@@ -148,9 +148,13 @@ void Fluid::UpdateColorBuffer(int idx)
 {
 	const particle& p = particles[idx];
 
-	ColorBuffer[idx * 3] = 0.f;
-	ColorBuffer[idx * 3 + 1] = abs(p.vel.y);
-	ColorBuffer[idx * 3 + 2] = abs(p.vel.x);
+	ColorBuffer[idx * 3] = p.color.x;
+	ColorBuffer[idx * 3 + 1] = p.color.y;
+	ColorBuffer[idx * 3 + 2] = p.color.z;
+
+	/*ColorBuffer[idx * 3] = 0.f;
+	ColorBuffer[idx * 3 + 1] = abs(p.vel.y * 10);
+	ColorBuffer[idx * 3 + 2] = abs(p.vel.x * 10);*/
 }
 
 void Fluid::AddObstacle(CircularObj* obj)
@@ -451,26 +455,76 @@ void Fluid::extrapolate()
 
 void Fluid::ParticleInit()
 {
-	for (size_t i = 0; i < ArraySize; i++)
+	for (size_t i = 0; i < int(ArraySize / 2.f); i++)
 	{
-		particles.push_back(particle(cells[i].pos, glm::vec2(0.f)));
+		particles.push_back(particle(cells[2*i].pos, glm::vec2(0.f), glm::vec3(0.f), i));
+		cells[i].cellParticleIds.push_back(i);
 	}
+	particleCount = particles.size();
 }
 
 void Fluid::SimulateParticles(const float& dt) 
 {
-	for (size_t i = 0; i < particles.size(); i++)
+	
+	for (size_t i = 0; i < particleCount; i++)
+	{
+		const particle& p = particles[i];
+		const int& idx = int(p.pos.x / gridSize) + int(p.pos.y / gridSize) * gridCount_x;
+		cells[idx].cellParticleIds.push_back(i);
+	}
+	for (size_t i = 0; i < particleCount; i++)
 	{
 		particle& p = particles[i];
 		p.vel.y += -9.87 * dt;
 		p.pos += p.vel * dt;
+
+		const vector<int>& CollisionIds = cells[p.cellid].cellParticleIds;
+
+		const int& idx = int(p.pos.x / gridSize) + int(p.pos.y / gridSize) * gridCount_x;
+		p.vel.x = cells[idx].u;
+		p.vel.y = cells[idx].v;
 
 		if (p.pos.y < 0)
 		{
 			p.pos.y = 0;
 			p.vel.y *= -1;
 		}
-		// next up particle collision ...
+		else if (p.pos.y > worldSize_y)
+		{
+			p.pos.y = worldSize_y;
+			p.vel.y *= -1;
+		}
+		if (p.pos.x < 0)
+		{
+			p.pos.x = 0;
+			p.vel.x *= -1;
+		}
+		else if (p.pos.x > worldSize_x)
+		{
+			p.pos.x = worldSize_x;
+			p.vel.x *= -1;
+		}
+
+		if (CollisionIds.size() > 1)
+		{
+			for (size_t cpi : cells[p.cellid].cellParticleIds) // cpi: collision particle id
+			{
+				if (cpi == i)
+					continue;
+				else if ((particles[cpi].pos - p.pos).length() < particleSize)
+				{
+					printf("collision");
+					particle& cp = particles[cpi];
+					cp.pos += (cp.pos - p.pos) / 2.f;
+					p.pos -= (cp.pos - p.pos) / 2.f;
+					cp.vel *= -1.f;
+					p.vel *= -1.f;
+					p.color = glm::vec3(1.f, 0.8f, 0.f);
+					cp.color = glm::vec3(1.f, 0.8f, 0.f);
+				}
+			}
+		}
+
 
 		UpdatePosBuffer(i);
 		UpdateColorBuffer(i);
@@ -481,8 +535,8 @@ void Fluid::SimulateParticles(const float& dt)
 void Fluid::simulate(double dt) {
 	ndt = dt / substeps;
 
-#define GRAVITY 1
-#ifdef GRAVITY
+#define GRAVITY 0
+#if GRAVITY
 	for (int i = 1; i < gridCount_x - 1; i++) 
 	{
 		for (int j = 1; j < gridCount_y - 1; j++) 

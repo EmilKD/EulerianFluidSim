@@ -25,6 +25,7 @@ struct cell
 	double p{ 0.0f };
 
 	int id_right{ 0 }, id_left{ 0 }, id_up{ 0 }, id_down{ 0 };
+	vector<int>cellParticleIds;
 };
 
 struct particle
@@ -32,6 +33,7 @@ struct particle
 	glm::vec2 pos;
 	glm::vec2 vel;
 	glm::vec3 color;
+	int cellid;
 };
 
 struct CircularObj;
@@ -81,6 +83,9 @@ private:
 	vector<CircularObj*> Obstacles{};
 	vector<uint32_t> IterHeight, IterWidth, IterIndices, IterSubSteps;
 	vector<particle> particles;
+	vector<int> cellParticleIds;
+	const float particleSize{ 0.1f };
+	int particleCount{ 0 };
 
 	// Creating the grid graphical object
 	const int ArraySize{ gridCount_x * gridCount_y };
@@ -130,13 +135,14 @@ struct CircularObj
 			c->s = 1;
 		
 		cells.clear();
-		for (int i = 1; i < FluidGrid->gridCount_x - 1; i++)
+		for (int i = int((x - radius) / FluidGrid->gridSize); i < int((x + radius) / FluidGrid->gridSize); i++)
 		{
-			for (int j = 1; j < FluidGrid->gridCount_y - 1; j++)
+			for (int j = int((y - radius) / FluidGrid->gridSize); j < int((y + radius) / FluidGrid->gridSize); j++)
 			{
-				if (std::sqrt(std::pow(FluidGrid->cells[i + j * FluidGrid->gridCount_x].pos.x - x, 2) + std::pow(FluidGrid->cells[i + j * FluidGrid->gridCount_x].pos.y - y, 2)) <= radius)
+				const int& idx = i + j * FluidGrid->gridCount_x;
+				if (std::sqrt(std::pow(FluidGrid->cells[idx].pos.x - x, 2) + std::pow(FluidGrid->cells[idx].pos.y - y, 2)) <= radius)
 				{
-					this->cells.push_back(&FluidGrid->cells[i + j * FluidGrid->gridCount_x]);
+					this->cells.push_back(&FluidGrid->cells[idx]);
 				}
 			}
 		}
